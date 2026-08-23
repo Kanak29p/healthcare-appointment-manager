@@ -4,6 +4,7 @@ import { PrismaClient, Role } from '@prisma/client';
 import { AppError } from '../middleware/error';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { cleanupExpiredHolds } from '../utils/hold';
+import { LLMService } from '../services/llm.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -236,10 +237,53 @@ router.post('/appointments/:id/confirm', authorize(Role.PATIENT), async (req: Au
       return updated;
     });
 
+    // Attempt AI summary generation. The LLM call MUST NOT fail appointment confirmation
+    let aiSummaryResponse: any = null;
+    try {
+      console.log(`[AI Summary] Generating pre-visit summary for appointment: ${id}...`);
+      const aiResult = await LLMService.generatePreVisitSummary(symptoms);
+      
+      const aiSummary = await prisma.aISummary.create({
+        data: {
+          appointmentId: id,
+          urgency: aiResult.urgency,
+          chiefComplaint: aiResult.chiefComplaint,
+          suggestedQuestions: aiResult.suggestedQuestions,
+          status: 'SUCCESS'
+        }
+      });
+
+      console.log(`[AI Summary] Successfully created pre-visit summary for appointment: ${id}`);
+      aiSummaryResponse = {
+        status: 'SUCCESS',
+        urgency: aiSummary.urgency,
+        chiefComplaint: aiSummary.chiefComplaint,
+        suggestedQuestions: aiSummary.suggestedQuestions
+      };
+    } catch (llmErr: any) {
+      console.error(`[AI Summary Failed] Technical error occurred:`, llmErr.message);
+      
+      // Save FAILED status summary to DB
+      const aiSummary = await prisma.aISummary.create({
+        data: {
+          appointmentId: id,
+          status: 'FAILED',
+          suggestedQuestions: []
+        }
+      });
+
+      aiSummaryResponse = {
+        status: 'FAILED'
+      };
+    }
+
     res.status(200).json({
       success: true,
-      message: 'Appointment confirmed successfully',
-      appointment: confirmedAppointment
+      message: aiSummaryResponse.status === 'SUCCESS' 
+        ? 'Appointment confirmed' 
+        : 'Appointment confirmed. AI summary is temporarily unavailable.',
+      appointment: confirmedAppointment,
+      aiSummary: aiSummaryResponse
     });
   } catch (err: any) {
     if (err.message === 'Hold expired during transaction process') {
@@ -498,7 +542,8 @@ router.get('/appointments/doctor', authorize(Role.DOCTOR), async (req: AuthReque
           select: {
             description: true
           }
-        }
+        },
+        aiSummary: true
       },
       orderBy: { startTime: 'asc' }
     });
@@ -510,12 +555,57 @@ router.get('/appointments/doctor', authorize(Role.DOCTOR), async (req: AuthReque
       startTime: appt.startTime.toISOString(),
       endTime: appt.endTime.toISOString(),
       status: appt.status,
-      symptoms: appt.symptom?.description || null
+      symptoms: appt.symptom?.description || null,
+      aiSummary: appt.aiSummary ? {
+        status: appt.aiSummary.status,
+        urgency: appt.aiSummary.urgency,
+        chiefComplaint: appt.aiSummary.chiefComplaint,
+        suggestedQuestions: appt.aiSummary.suggestedQuestions
+      } : null
     }));
 
     res.status(200).json({
       success: true,
       appointments: formatted
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 7. Get AI Summary for appointment
+// GET /api/appointments/:id/ai-summary
+router.get('/appointments/:id/ai-summary', async (req: AuthRequest, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        doctor: true,
+        aiSummary: true
+      }
+    });
+
+    if (!appointment) {
+      return next(new AppError('Appointment not found', 404));
+    }
+
+    // Role checks: must be the assigned doctor or an admin
+    const isAdmin = req.user?.role === Role.ADMIN;
+    const isAssignedDoctor = req.user?.role === Role.DOCTOR && appointment.doctor.userId === req.user.id;
+
+    if (!isAdmin && !isAssignedDoctor) {
+      return next(new AppError('Unauthorized: Access denied to AI pre-visit summary', 403));
+    }
+
+    if (!appointment.aiSummary) {
+      return next(new AppError('AI summary not found for this appointment', 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      aiSummary: appointment.aiSummary
     });
   } catch (err) {
     next(err);

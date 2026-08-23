@@ -107,6 +107,12 @@ export interface DoctorAppointmentInfo {
   endTime: string;
   status: 'HELD' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
   symptoms?: string | null;
+  aiSummary?: {
+    status: 'SUCCESS' | 'FAILED';
+    urgency?: 'LOW' | 'MEDIUM' | 'HIGH';
+    chiefComplaint?: string | null;
+    suggestedQuestions?: string[];
+  } | null;
 }
 
 const getHeaders = (includeToken = true): HeadersInit => {
@@ -428,6 +434,18 @@ export const api = {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch doctor appointments');
+    }
+    return data;
+  },
+
+  getAppointmentAISummary: async (id: string): Promise<{ success: boolean; aiSummary: any }> => {
+    const response = await fetch(`${API_URL}/api/appointments/${id}/ai-summary`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch appointment AI summary');
     }
     return data;
   }

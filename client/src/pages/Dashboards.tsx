@@ -292,10 +292,52 @@ export function DoctorDashboard() {
                       </div>
                       {appt.symptoms && (
                         <div className="mt-2 pt-2 border-t border-slate-850">
-                          <span className="text-slate-550 block mb-1">Symptoms Description:</span>
+                          <span className="text-slate-550 block mb-1 font-semibold text-[11px] uppercase tracking-wider">Patient Symptoms:</span>
                           <p className="text-slate-400 italic bg-slate-955/30 p-2 rounded text-xs leading-normal">
                             "{appt.symptoms}"
                           </p>
+                        </div>
+                      )}
+
+                      {appt.aiSummary && (
+                        <div className="mt-3 pt-3 border-t border-slate-850 space-y-2">
+                          <span className="text-indigo-400 block text-[11px] font-bold uppercase tracking-wider">
+                            AI Pre-Visit Summary
+                          </span>
+                          {appt.aiSummary.status === 'SUCCESS' ? (
+                            <div className="space-y-2 text-xs">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-slate-500">Urgency:</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  appt.aiSummary.urgency === 'HIGH' 
+                                    ? 'bg-rose-950 text-rose-400 border border-rose-900/50' 
+                                    : appt.aiSummary.urgency === 'MEDIUM'
+                                      ? 'bg-amber-950 text-amber-400 border border-amber-900/50'
+                                      : 'bg-emerald-950 text-emerald-400 border border-emerald-900/50'
+                                }`}>
+                                  {appt.aiSummary.urgency}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 block mb-0.5">Chief Complaint:</span>
+                                <p className="text-slate-300 bg-slate-950 p-2 rounded font-medium">
+                                  {appt.aiSummary.chiefComplaint}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 block mb-1">Suggested Questions:</span>
+                                <ol className="list-decimal list-inside space-y-1 text-slate-350 bg-slate-950 p-2 rounded">
+                                  {appt.aiSummary.suggestedQuestions?.map((q: string, i: number) => (
+                                    <li key={i} className="leading-normal">{q}</li>
+                                  ))}
+                                </ol>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-rose-400 text-xs italic bg-rose-955/20 p-2 rounded border border-rose-950/20">
+                              AI pre-visit summary is temporarily unavailable.
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

@@ -241,7 +241,7 @@ export default function PatientBook() {
               <form onSubmit={handleConfirm} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                    What symptoms are you experiencing?
+                    Describe your symptoms
                   </label>
                   <textarea
                     required
@@ -251,8 +251,8 @@ export default function PatientBook() {
                     className="block w-full px-4 py-3 bg-slate-950 border border-slate-850 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                     placeholder="Describe your symptoms here (e.g. persistent headaches, joint soreness for the last 3 days)..."
                   />
-                  <p className="text-[10px] text-slate-500 mt-1.5">
-                    * Minimum 5 characters. Your clinical summary description is shared securely with your practitioner.
+                  <p className="text-xs text-amber-500 font-medium mt-1.5">
+                    Your symptoms will be shared with the doctor and used to prepare a pre-visit summary.
                   </p>
                 </div>
 
