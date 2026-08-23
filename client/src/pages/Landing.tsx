@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { HealthResponse } from '../services/api';
 import { Calendar, Clock, Shield, Activity, Heart, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -70,6 +71,17 @@ export default function Landing() {
                   API online
                 </span>
               )}
+            </div>
+
+            <div className="h-4 w-[1px] bg-slate-800" />
+
+            <div className="flex items-center space-x-3">
+              <Link to="/login" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer">
+                Sign In
+              </Link>
+              <Link to="/register" className="text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-500 px-3.5 py-1.5 rounded-lg shadow-md shadow-indigo-600/10 transition-all cursor-pointer">
+                Register
+              </Link>
             </div>
           </div>
         </div>
