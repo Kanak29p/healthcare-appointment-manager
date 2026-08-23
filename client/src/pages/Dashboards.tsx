@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import type { FullUser } from '../services/api';
-import { Activity, LogOut, Shield, User as UserIcon, BriefcaseMedical, RefreshCw, AlertCircle } from 'lucide-react';
+import { Activity, LogOut, User as UserIcon, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface DashboardFrameProps {
   title: string;
@@ -170,7 +170,7 @@ export function PatientDashboard() {
 
           <div className="p-6 rounded-xl bg-slate-950 border border-slate-900 text-center py-10">
             <p className="text-slate-400 text-sm">No upcoming appointments or follow-ups scheduled yet.</p>
-            <p className="text-xs text-slate-500 mt-2">Appointments features will be implemented in Part 3.</p>
+            <p className="text-xs text-slate-500 mt-2">Appointments features will be implemented in Part 4.</p>
           </div>
         </div>
       )}
@@ -178,91 +178,79 @@ export function PatientDashboard() {
   );
 }
 
-// 2. Doctor Dashboard
+// 2. Doctor Dashboard (Placeholder)
 export function DoctorDashboard() {
-  return (
-    <DashboardFrame
-      title="Doctor Dashboard"
-      roleIcon={<BriefcaseMedical className="h-3.5 w-3.5" />}
-      roleBg="bg-emerald-950/50"
-      roleText="text-emerald-400"
-    >
-      {(user: FullUser) => (
-        <div className="space-y-6">
-          <div className="p-6 rounded-xl bg-slate-950 border border-slate-900">
-            <h3 className="text-base font-bold text-white mb-4">Clinical Profile Details</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-slate-500">Practitioner Name:</span>
-                <p className="text-slate-200 font-medium">{user.name}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Email Address:</span>
-                <p className="text-slate-200 font-medium">{user.email}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Specialization:</span>
-                <p className="text-slate-200 font-medium">{user.doctorProfile?.specialization || 'General Practice'}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Availability Slots:</span>
-                <p className="text-slate-200 font-medium">{user.doctorProfile?.slotDuration ? `${user.doctorProfile.slotDuration} minutes` : '30 minutes'}</p>
-              </div>
-            </div>
-          </div>
+  const navigate = useNavigate();
 
-          <div className="p-6 rounded-xl bg-slate-950 border border-slate-900 text-center py-10">
-            <p className="text-slate-400 text-sm">No scheduled patient visits or consultations today.</p>
-            <p className="text-xs text-slate-500 mt-2">Clinical workflows will be enabled in Part 3.</p>
-          </div>
-        </div>
-      )}
-    </DashboardFrame>
+  const handleLogout = () => {
+    api.logout();
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center font-sans p-4">
+      <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center max-w-md shadow-xl">
+        <Activity className="h-10 w-10 text-indigo-500 mx-auto mb-4 animate-pulse" />
+        <h1 className="text-xl font-bold text-white mb-2">Doctor Dashboard</h1>
+        <p className="text-slate-400 text-sm mb-6">Coming Soon</p>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center space-x-2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
   );
 }
 
 // 3. Admin Dashboard
 export function AdminDashboard() {
-  return (
-    <DashboardFrame
-      title="Administrator Console"
-      roleIcon={<Shield className="h-3.5 w-3.5" />}
-      roleBg="bg-rose-950/50"
-      roleText="text-rose-400"
-    >
-      {(user: FullUser) => (
-        <div className="space-y-6">
-          <div className="p-6 rounded-xl bg-slate-950 border border-slate-900">
-            <h3 className="text-base font-bold text-white mb-4">Account Administration</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-slate-500">Admin Name:</span>
-                <p className="text-slate-200 font-medium">{user.name}</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Email Address:</span>
-                <p className="text-slate-200 font-medium">{user.email}</p>
-              </div>
-            </div>
-          </div>
+  const [user, setUser] = useState<FullUser | null>(null);
 
-          <div className="p-6 rounded-xl bg-slate-950 border border-slate-900">
-            <h3 className="text-base font-bold text-white mb-3">System Actions</h3>
-            <p className="text-sm text-slate-400 mb-4">You have full write access to database and system configuration flags.</p>
-            <div className="flex flex-wrap gap-3">
-              <span className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer border border-slate-800">
-                User Management
-              </span>
-              <span className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer border border-slate-800">
-                System Diagnostics
-              </span>
-              <span className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer border border-slate-800">
-                Configuration Locks
-              </span>
+  useEffect(() => {
+    api.getMe()
+      .then(res => setUser(res.user))
+      .catch(console.error);
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="p-6 rounded-xl bg-slate-900 border border-slate-800">
+        <h2 className="text-lg font-bold text-white mb-2">Welcome, {user?.name || 'Administrator'}</h2>
+        <p className="text-slate-400 text-sm">Here is a quick overview of your admin status.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="p-6 rounded-xl bg-slate-900 border border-slate-800">
+          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Admin Profile</h3>
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-slate-500">Name:</span>
+              <span className="text-slate-350 ml-2 font-medium">{user?.name}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Email:</span>
+              <span className="text-slate-350 ml-2 font-medium">{user?.email}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Access Role:</span>
+              <span className="text-indigo-400 ml-2 font-mono">{user?.role}</span>
             </div>
           </div>
         </div>
-      )}
-    </DashboardFrame>
+
+        <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Management Controls</h3>
+            <p className="text-sm text-slate-400">Manage medical practitioner accounts, adjust checkup slot intervals, and record leave periods.</p>
+          </div>
+          <div className="mt-4 text-xs text-indigo-400 font-mono">
+            System Online & Connected
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

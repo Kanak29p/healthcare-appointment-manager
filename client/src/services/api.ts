@@ -26,6 +26,34 @@ export interface DoctorProfile {
   isActive: boolean;
 }
 
+export interface DoctorAvailability {
+  id: string;
+  doctorId: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface DoctorLeave {
+  id: string;
+  doctorId: string;
+  leaveDate: string;
+  reason?: string | null;
+}
+
+export interface DoctorAdminInfo {
+  id: string;
+  name: string;
+  email: string;
+  specialization: string;
+  experience: number;
+  slotDuration: number;
+  isActive: boolean;
+  doctorProfileId?: string;
+  availabilities?: DoctorAvailability[];
+  leaves?: DoctorLeave[];
+}
+
 export interface FullUser extends User {
   patientProfile?: PatientProfile | null;
   doctorProfile?: DoctorProfile | null;
@@ -138,5 +166,126 @@ export const api = {
 
   getToken: (): string | null => {
     return localStorage.getItem('token');
+  },
+
+  // Admin Doctor Management Methods
+  adminCreateDoctor: async (payload: {
+    name: string;
+    email: string;
+    password: string;
+    specialization: string;
+    experience?: number | null;
+    slotDuration: number;
+  }): Promise<{ success: boolean; message: string; doctor: any }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create doctor account');
+    }
+    return data;
+  },
+
+  adminGetDoctors: async (): Promise<{ success: boolean; doctors: DoctorAdminInfo[] }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch doctors list');
+    }
+    return data;
+  },
+
+  adminGetDoctor: async (id: string): Promise<{ success: boolean; doctor: DoctorAdminInfo }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors/${id}`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch doctor details');
+    }
+    return data;
+  },
+
+  adminUpdateDoctor: async (id: string, payload: {
+    name?: string;
+    specialization?: string;
+    experience?: number | null;
+    slotDuration?: number;
+    isActive?: boolean;
+  }): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors/${id}`, {
+      method: 'PATCH',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update doctor profile');
+    }
+    return data;
+  },
+
+  adminAddAvailability: async (doctorId: string, payload: {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+  }): Promise<{ success: boolean; message: string; availability: DoctorAvailability }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors/${doctorId}/availability`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to add availability slot');
+    }
+    return data;
+  },
+
+  adminDeleteAvailability: async (doctorId: string, availabilityId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors/${doctorId}/availability/${availabilityId}`, {
+      method: 'DELETE',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete availability slot');
+    }
+    return data;
+  },
+
+  adminAddLeave: async (doctorId: string, payload: {
+    leaveDate: string;
+    reason?: string | null;
+  }): Promise<{ success: boolean; message: string; leave: DoctorLeave }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors/${doctorId}/leaves`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to add leave record');
+    }
+    return data;
+  },
+
+  adminDeleteLeave: async (doctorId: string, leaveId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch(`${API_URL}/api/admin/doctors/${doctorId}/leaves/${leaveId}`, {
+      method: 'DELETE',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete leave record');
+    }
+    return data;
   }
 };
