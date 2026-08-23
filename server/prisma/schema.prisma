@@ -88,12 +88,15 @@ model Appointment {
   startTime     DateTime
   endTime       DateTime
   status        AppointmentStatus @default(HELD)
+  holdExpiresAt DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   symptom       Symptom?
   aiSummary     AISummary?
   consultation  Consultation?
   calendarEvent CalendarEvent[]
+
+  @@index([doctorId, startTime])
 }
 
 model Symptom {

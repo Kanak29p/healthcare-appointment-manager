@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
+import patientRouter from './routes/patient';
+import appointmentRouter from './routes/appointment';
 import { errorHandler } from './middleware/error';
 
 // Load environment variables
@@ -19,16 +21,18 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
-app.use('/api/auth', authRouter);
-app.use('/api/admin', adminRouter);
-
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Healthcare Appointment Manager API is running'
   });
 });
+
+// Routes
+app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api', patientRouter);
+app.use('/api', appointmentRouter);
 
 // Fallback for undefined routes
 app.use((req, res, next) => {

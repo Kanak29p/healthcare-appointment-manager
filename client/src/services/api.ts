@@ -81,6 +81,34 @@ export interface MeResponse {
   user: FullUser;
 }
 
+// Appointment and Slot types for Patient Booking
+export interface Slot {
+  startTime: string;
+  endTime: string;
+  status: 'AVAILABLE' | 'HELD' | 'BOOKED';
+}
+
+export interface PatientAppointmentInfo {
+  id: string;
+  doctorName: string;
+  specialization: string;
+  startTime: string;
+  endTime: string;
+  status: 'HELD' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  holdExpiresAt?: string | null;
+  symptoms?: string | null;
+}
+
+export interface DoctorAppointmentInfo {
+  id: string;
+  patientName: string;
+  patientEmail: string;
+  startTime: string;
+  endTime: string;
+  status: 'HELD' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  symptoms?: string | null;
+}
+
 const getHeaders = (includeToken = true): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json'
@@ -285,6 +313,121 @@ export const api = {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to delete leave record');
+    }
+    return data;
+  },
+
+  // Patient Doctor Search & Slots API Client Actions
+  getDoctors: async (specialization?: string): Promise<{ success: boolean; doctors: DoctorAdminInfo[] }> => {
+    const url = specialization 
+      ? `${API_URL}/api/doctors?specialization=${encodeURIComponent(specialization)}`
+      : `${API_URL}/api/doctors`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to search doctors');
+    }
+    return data;
+  },
+
+  getDoctor: async (id: string): Promise<{ success: boolean; doctor: DoctorAdminInfo }> => {
+    const response = await fetch(`${API_URL}/api/doctors/${id}`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch doctor details');
+    }
+    return data;
+  },
+
+  getDoctorSlots: async (id: string, date: string): Promise<{ success: boolean; date: string; doctorId: string; slots: Slot[] }> => {
+    const response = await fetch(`${API_URL}/api/doctors/${id}/slots?date=${date}`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch availability slots');
+    }
+    return data;
+  },
+
+  holdSlot: async (payload: { doctorId: string; startTime: string; endTime: string }): Promise<{ success: boolean; message: string; appointment: any }> => {
+    const response = await fetch(`${API_URL}/api/appointments/hold`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to hold appointment slot');
+    }
+    return data;
+  },
+
+  confirmAppointment: async (id: string, payload: { symptoms: string }): Promise<{ success: boolean; message: string; appointment: any }> => {
+    const response = await fetch(`${API_URL}/api/appointments/${id}/confirm`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to confirm appointment');
+    }
+    return data;
+  },
+
+  cancelAppointment: async (id: string): Promise<{ success: boolean; message: string; appointment: any }> => {
+    const response = await fetch(`${API_URL}/api/appointments/${id}/cancel`, {
+      method: 'PATCH',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to cancel appointment');
+    }
+    return data;
+  },
+
+  rescheduleAppointment: async (id: string, payload: { startTime: string; endTime: string }): Promise<{ success: boolean; message: string; appointment: any }> => {
+    const response = await fetch(`${API_URL}/api/appointments/${id}/reschedule`, {
+      method: 'PATCH',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to reschedule appointment');
+    }
+    return data;
+  },
+
+  getMyAppointments: async (): Promise<{ success: boolean; appointments: PatientAppointmentInfo[] }> => {
+    const response = await fetch(`${API_URL}/api/appointments/my`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch your appointments');
+    }
+    return data;
+  },
+
+  getDoctorAppointments: async (): Promise<{ success: boolean; appointments: DoctorAppointmentInfo[] }> => {
+    const response = await fetch(`${API_URL}/api/appointments/doctor`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch doctor appointments');
     }
     return data;
   }
