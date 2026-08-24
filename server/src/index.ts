@@ -5,6 +5,7 @@ import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
 import patientRouter from './routes/patient';
 import appointmentRouter from './routes/appointment';
+import doctorRouter from './routes/doctor';
 import { errorHandler } from './middleware/error';
 
 // Load environment variables
@@ -33,6 +34,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', patientRouter);
 app.use('/api', appointmentRouter);
+app.use('/api', doctorRouter);
 
 // Fallback for undefined routes
 app.use((req, res, next) => {

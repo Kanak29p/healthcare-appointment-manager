@@ -241,13 +241,12 @@ export function DoctorDashboard() {
           </div>
         </div>
       </header>
-
       {/* Content */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div>
             <h1 className="text-2xl font-bold text-white">My Consultations Schedule</h1>
-            <p className="text-slate-400 text-sm mt-1">Review upcoming appointments and check patient symptom logs.</p>
+            <p className="text-slate-400 text-sm mt-1">Review upcoming appointments, record prescriptions, and check patient logs.</p>
           </div>
 
           {loading ? (
@@ -266,84 +265,164 @@ export function DoctorDashboard() {
               <p className="text-xs text-slate-550 mt-1">Your upcoming appointment slot listings will appear here.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {appointments.map((appt) => (
-                <div
-                  key={appt.id}
-                  className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-white text-sm">{appt.patientName}</h4>
-                        <p className="text-slate-450 text-xs mt-0.5">{appt.patientEmail}</p>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-400 border border-indigo-950/20">
-                        {appt.status}
-                      </span>
-                    </div>
+            <div className="space-y-8">
+              {/* 1. Upcoming Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider pb-2 border-b border-slate-900">
+                  Upcoming & Active Checkups
+                </h3>
+                {appointments.filter(a => a.status === 'CONFIRMED' || a.status === 'HELD').length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2">No active upcoming consultations.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {appointments.filter(a => a.status === 'CONFIRMED' || a.status === 'HELD').map((appt) => (
+                      <div
+                        key={appt.id}
+                        className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-semibold text-white text-sm">{appt.patientName}</h4>
+                              <p className="text-slate-450 text-xs mt-0.5">{appt.patientEmail}</p>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-400 border border-indigo-950/20">
+                              {appt.status}
+                            </span>
+                          </div>
 
-                    <div className="mt-3.5 space-y-2 text-xs text-slate-350">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Scheduled:</span>
-                        <span className="font-mono text-slate-300">
-                          {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeStr(appt.startTime)} - {formatTimeStr(appt.endTime)} (UTC)
-                        </span>
-                      </div>
-                      {appt.symptoms && (
-                        <div className="mt-2 pt-2 border-t border-slate-850">
-                          <span className="text-slate-550 block mb-1 font-semibold text-[11px] uppercase tracking-wider">Patient Symptoms:</span>
-                          <p className="text-slate-400 italic bg-slate-955/30 p-2 rounded text-xs leading-normal">
-                            "{appt.symptoms}"
-                          </p>
-                        </div>
-                      )}
-
-                      {appt.aiSummary && (
-                        <div className="mt-3 pt-3 border-t border-slate-850 space-y-2">
-                          <span className="text-indigo-400 block text-[11px] font-bold uppercase tracking-wider">
-                            AI Pre-Visit Summary
-                          </span>
-                          {appt.aiSummary.status === 'SUCCESS' ? (
-                            <div className="space-y-2 text-xs">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-slate-500">Urgency:</span>
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  appt.aiSummary.urgency === 'HIGH' 
-                                    ? 'bg-rose-950 text-rose-400 border border-rose-900/50' 
-                                    : appt.aiSummary.urgency === 'MEDIUM'
-                                      ? 'bg-amber-950 text-amber-400 border border-amber-900/50'
-                                      : 'bg-emerald-950 text-emerald-400 border border-emerald-900/50'
-                                }`}>
-                                  {appt.aiSummary.urgency}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-slate-500 block mb-0.5">Chief Complaint:</span>
-                                <p className="text-slate-300 bg-slate-950 p-2 rounded font-medium">
-                                  {appt.aiSummary.chiefComplaint}
+                          <div className="mt-3.5 space-y-2 text-xs text-slate-350">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Scheduled:</span>
+                              <span className="font-mono text-slate-300">
+                                {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeStr(appt.startTime)} - {formatTimeStr(appt.endTime)} (UTC)
+                              </span>
+                            </div>
+                            {appt.symptoms && (
+                              <div className="mt-2 pt-2 border-t border-slate-850">
+                                <span className="text-slate-550 block mb-1 font-semibold text-[11px] uppercase tracking-wider">Patient Symptoms:</span>
+                                <p className="text-slate-400 italic bg-slate-955/30 p-2 rounded text-xs leading-normal">
+                                  "{appt.symptoms}"
                                 </p>
                               </div>
-                              <div>
-                                <span className="text-slate-500 block mb-1">Suggested Questions:</span>
-                                <ol className="list-decimal list-inside space-y-1 text-slate-350 bg-slate-950 p-2 rounded">
-                                  {appt.aiSummary.suggestedQuestions?.map((q: string, i: number) => (
-                                    <li key={i} className="leading-normal">{q}</li>
-                                  ))}
-                                </ol>
+                            )}
+
+                            {appt.aiSummary && (
+                              <div className="mt-3 pt-3 border-t border-slate-850 space-y-2">
+                                <span className="text-indigo-400 block text-[11px] font-bold uppercase tracking-wider">
+                                  AI Pre-Visit Summary
+                                </span>
+                                {appt.aiSummary.status === 'SUCCESS' ? (
+                                  <div className="space-y-2 text-xs">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-slate-500">Urgency:</span>
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                        appt.aiSummary.urgency === 'HIGH' 
+                                          ? 'bg-rose-950 text-rose-400 border border-rose-900/50' 
+                                          : appt.aiSummary.urgency === 'MEDIUM'
+                                            ? 'bg-amber-950 text-amber-400 border border-amber-900/50'
+                                            : 'bg-emerald-950 text-emerald-400 border border-emerald-900/50'
+                                      }`}>
+                                        {appt.aiSummary.urgency}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500 block mb-0.5">Chief Complaint:</span>
+                                      <p className="text-slate-300 bg-slate-950 p-2 rounded font-medium">
+                                        {appt.aiSummary.chiefComplaint}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500 block mb-1">Suggested Questions:</span>
+                                      <ol className="list-decimal list-inside space-y-1 text-slate-350 bg-slate-950 p-2 rounded">
+                                        {appt.aiSummary.suggestedQuestions?.map((q: string, i: number) => (
+                                          <li key={i} className="leading-normal">{q}</li>
+                                        ))}
+                                      </ol>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-rose-400 text-xs italic bg-rose-955/20 p-2 rounded border border-rose-950/20">
+                                    AI pre-visit summary is temporarily unavailable.
+                                  </p>
+                                )}
                               </div>
-                            </div>
-                          ) : (
-                            <p className="text-rose-400 text-xs italic bg-rose-955/20 p-2 rounded border border-rose-950/20">
-                              AI pre-visit summary is temporarily unavailable.
-                            </p>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
+
+                        {appt.status === 'CONFIRMED' && (
+                          <div className="mt-4 pt-3 border-t border-slate-850 flex justify-end">
+                            <button
+                              onClick={() => navigate(`/doctor/appointments/${appt.id}`)}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                            >
+                              Open Consultation
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
+
+              {/* 2. Completed Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-900">
+                  Completed Consultations
+                </h3>
+                {appointments.filter(a => a.status === 'COMPLETED').length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2">No completed consultations on record.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {appointments.filter(a => a.status === 'COMPLETED').map((appt) => (
+                      <div
+                        key={appt.id}
+                        className="bg-slate-900/60 border border-slate-850 rounded-2xl p-5 shadow-xl space-y-4 flex flex-col justify-between opacity-80 hover:opacity-100 transition-opacity"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-semibold text-slate-200 text-sm">{appt.patientName}</h4>
+                              <p className="text-slate-500 text-xs mt-0.5">{appt.patientEmail}</p>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-950 text-slate-450 border border-slate-800">
+                              {appt.status}
+                            </span>
+                          </div>
+
+                          <div className="mt-3.5 space-y-2 text-xs text-slate-400">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Scheduled:</span>
+                              <span className="font-mono text-slate-350">
+                                {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeStr(appt.startTime)} - {formatTimeStr(appt.endTime)} (UTC)
+                              </span>
+                            </div>
+                            {appt.symptoms && (
+                              <div className="mt-2 pt-2 border-t border-slate-850">
+                                <span className="text-slate-500 block mb-1 font-semibold text-[11px] uppercase tracking-wider">Patient Symptoms:</span>
+                                <p className="text-slate-400 italic bg-slate-950/20 p-2 rounded text-xs leading-normal">
+                                  "{appt.symptoms}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-850 flex justify-end">
+                          <button
+                            onClick={() => navigate(`/doctor/appointments/${appt.id}`)}
+                            className="px-4 py-2 bg-slate-950 hover:bg-slate-850 border border-slate-800 text-slate-450 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                          >
+                            View Consultation
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

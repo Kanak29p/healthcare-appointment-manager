@@ -115,6 +115,38 @@ export interface DoctorAppointmentInfo {
   } | null;
 }
 
+export interface PostVisitSummary {
+  status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  summary?: string | null;
+  medicationSchedule?: Array<{ medicineName: string; instructions: string }> | null;
+  followUpSteps?: string[];
+}
+
+export interface PatientPostVisitSummaryResponse {
+  success: boolean;
+  appointment: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    status: 'HELD' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+    doctorName: string;
+    specialization: string;
+  };
+  consultationCompleted: boolean;
+  notes?: string | null;
+  prescription?: {
+    instructions: string;
+    medications: Array<{
+      medicineName: string;
+      dosage: string;
+      frequency: 'ONCE_DAILY' | 'TWICE_DAILY' | 'THREE_TIMES_DAILY' | 'AS_NEEDED';
+      duration: string;
+    }>;
+  } | null;
+  postVisitSummary?: PostVisitSummary | null;
+}
+
+
 const getHeaders = (includeToken = true): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json'
@@ -446,6 +478,68 @@ export const api = {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch appointment AI summary');
+    }
+    return data;
+  },
+
+  getDoctorAppointmentDetail: async (appointmentId: string): Promise<{ success: boolean; appointment: any }> => {
+    const response = await fetch(`${API_URL}/api/doctor/appointments/${appointmentId}`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch appointment details');
+    }
+    return data;
+  },
+
+  saveConsultation: async (appointmentId: string, notes: string): Promise<{ success: boolean; message: string; consultation: any }> => {
+    const response = await fetch(`${API_URL}/api/doctor/appointments/${appointmentId}/consultation`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify({ notes })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to save consultation notes');
+    }
+    return data;
+  },
+
+  savePrescription: async (appointmentId: string, payload: { instructions: string; medications: any[] }): Promise<{ success: boolean; message: string; prescription: any }> => {
+    const response = await fetch(`${API_URL}/api/doctor/appointments/${appointmentId}/prescription`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to save prescription');
+    }
+    return data;
+  },
+
+  completeAppointment: async (appointmentId: string): Promise<{ success: boolean; message: string; appointment: any; postVisitSummary: any }> => {
+    const response = await fetch(`${API_URL}/api/doctor/appointments/${appointmentId}/complete`, {
+      method: 'POST',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to complete appointment');
+    }
+    return data;
+  },
+
+  getPatientPostVisitSummary: async (appointmentId: string): Promise<PatientPostVisitSummaryResponse> => {
+    const response = await fetch(`${API_URL}/api/patient/appointments/${appointmentId}/summary`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch post-visit summary');
     }
     return data;
   }

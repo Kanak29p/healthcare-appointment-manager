@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { PatientAppointmentInfo, Slot } from '../services/api';
 import { CalendarDays, RefreshCw, XCircle, Stethoscope } from 'lucide-react';
@@ -321,8 +322,18 @@ export default function PatientAppointments() {
                         <span className="font-semibold text-white text-sm">{appt.doctorName}</span>
                         <p className="text-slate-450 text-xs mt-0.5">{appt.specialization}</p>
                       </div>
-                      <div className="text-right text-xs font-mono text-slate-400">
-                        {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeShort(appt.startTime)} (UTC)
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right text-xs font-mono text-slate-400">
+                          {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeShort(appt.startTime)} (UTC)
+                        </div>
+                        {appt.status === 'COMPLETED' && (
+                          <Link
+                            to={`/patient/appointments/${appt.id}/summary`}
+                            className="px-3.5 py-1.5 bg-indigo-650 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition"
+                          >
+                            View Summary
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -10,6 +10,20 @@ const aiSummarySchema = z.object({
 
 export type AISummaryResult = z.infer<typeof aiSummarySchema>;
 
+const postVisitSummarySchema = z.object({
+  summary: z.string().min(1, 'Summary must not be empty'),
+  medicationSchedule: z.array(
+    z.object({
+      medicineName: z.string().min(1, 'Medicine name must not be empty'),
+      instructions: z.string().min(1, 'Instructions must not be empty')
+    })
+  ),
+  followUpSteps: z.array(z.string()).min(1, 'Must provide at least one follow-up step')
+});
+
+export type PostVisitSummaryResult = z.infer<typeof postVisitSummarySchema>;
+
+
 export class LLMService {
   private static genAI: GoogleGenerativeAI | null = null;
 
@@ -103,6 +117,108 @@ CRITICAL INSTRUCTIONS:
     }
 
     const validated = aiSummarySchema.safeParse(parsedJson);
+    if (!validated.success) {
+      const issues = validated.error.issues.map(i => i.message).join(', ');
+      throw new Error(`LLM output failed validation checks: ${issues}`);
+    }
+
+    return validated.data;
+  }
+
+  /**
+   * Generates a patient-friendly post-visit summary utilizing Gemini AI.
+   * Supports simulated failures/successes for verification loops.
+   */
+  public static async generatePostVisitSummary(
+    notes: string,
+    prescriptionInstructions: string,
+    medications: Array<{ medicineName: string; dosage: string; frequency: string; duration: string }>
+  ): Promise<PostVisitSummaryResult> {
+    // 1. Simulate failure if development flag is active
+    if (process.env.SIMULATE_LLM_FAILURE === 'true') {
+      console.log('[LLM Service] Intentionally simulating a post-visit LLM service failure...');
+      throw new Error('Simulated post-visit LLM service failure (dev flag active)');
+    }
+
+    // 2. Simulate success if development flag is active
+    if (process.env.SIMULATE_LLM_SUCCESS === 'true') {
+      console.log('[LLM Service] Simulating a successful post-visit LLM summary...');
+      return {
+        summary: `The patient is advised to follow the recovery instructions: "${notes.substring(0, 150)}"`,
+        medicationSchedule: medications.map(med => ({
+          medicineName: med.medicineName,
+          instructions: `Take ${med.dosage} (${med.frequency}) for ${med.duration}. ${prescriptionInstructions}`
+        })),
+        followUpSteps: [
+          'Take prescribed medications exactly as instructed.',
+          'Monitor symptoms daily and report any abnormalities.',
+          'Schedule a follow-up consultation in 1-2 weeks if symptoms persist.'
+        ]
+      };
+    }
+
+    if (!notes || notes.trim().length === 0) {
+      throw new Error('Clinical notes text cannot be empty');
+    }
+
+    // 3. Connect to live Gemini
+    const client = this.getClient();
+    const model = client.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json'
+      },
+      systemInstruction: `You are a professional medical assistant creating patient-friendly post-visit summaries.
+Your goal is to parse doctor clinical notes and prescription details and generate a clear, easy-to-understand summary for the patient.
+
+CRITICAL INSTRUCTIONS:
+1. Translate clinical jargon into patient-friendly language (e.g., use "high blood pressure" instead of "hypertension").
+2. Create a medication schedule showing each medicine's name and clear instructions on how and when to take it.
+3. Outline clear, actionable next steps or follow-up instructions for the patient.
+4. Do not diagnose any new conditions. Do not invent information.
+5. Return structured JSON matching this schema:
+{
+  "summary": "plain text patient-friendly summary of the visit",
+  "medicationSchedule": [
+    {
+      "medicineName": "medicine name",
+      "instructions": "patient-friendly instructions on dosage, frequency, duration, and timing"
+    }
+  ],
+  "followUpSteps": ["actionable step 1", "actionable step 2"]
+}`
+    });
+
+    const medicationsText = medications.map(m => 
+      `- ${m.medicineName} (${m.dosage}, ${m.frequency}, for ${m.duration})`
+    ).join('\n');
+
+    const userPrompt = `Convert these clinical notes into a patient-friendly summary with medication schedule and follow-up steps.
+
+Clinical Notes:
+"${notes}"
+
+Prescription Instructions:
+"${prescriptionInstructions}"
+
+Prescribed Medications:
+${medicationsText || 'None'}`;
+
+    // Race timeout
+    const responsePromise = model.generateContent(userPrompt);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('LLM API request timed out')), 8000)
+    );
+
+    const result = await Promise.race([responsePromise, timeoutPromise]);
+    const textOutput = result.response.text();
+
+    if (!textOutput) {
+      throw new Error('Received empty text output from LLM for post-visit summary.');
+    }
+
+    const parsedJson = JSON.parse(textOutput);
+    const validated = postVisitSummarySchema.safeParse(parsedJson);
     if (!validated.success) {
       const issues = validated.error.issues.map(i => i.message).join(', ');
       throw new Error(`LLM output failed validation checks: ${issues}`);

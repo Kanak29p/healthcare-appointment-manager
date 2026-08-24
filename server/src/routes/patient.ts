@@ -279,4 +279,74 @@ router.get('/doctors/:id/slots', async (req, res, next) => {
   }
 });
 
+// 4. Get Patient Appointment Post-Visit Summary
+// GET /api/patient/appointments/:appointmentId/summary
+router.get('/patient/appointments/:appointmentId/summary', async (req: any, res, next) => {
+  try {
+    const { appointmentId } = req.params;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patient: true,
+        doctor: {
+          include: {
+            user: { select: { name: true } }
+          }
+        },
+        consultation: {
+          include: {
+            prescription: {
+              include: {
+                medications: true
+              }
+            }
+          }
+        },
+        postVisitSummary: true
+      }
+    });
+
+    if (!appointment) {
+      return next(new AppError('Appointment not found', 404));
+    }
+
+    // Security: Only the patient who owns the appointment can view it
+    if (appointment.patient.userId !== req.user!.id) {
+      return next(new AppError('Access denied: Unauthorized access to appointment summary', 403));
+    }
+
+    res.status(200).json({
+      success: true,
+      appointment: {
+        id: appointment.id,
+        startTime: appointment.startTime.toISOString(),
+        endTime: appointment.endTime.toISOString(),
+        status: appointment.status,
+        doctorName: appointment.doctor.user.name,
+        specialization: appointment.doctor.specialization
+      },
+      consultationCompleted: appointment.status === 'COMPLETED',
+      notes: appointment.consultation?.notes || null,
+      prescription: appointment.consultation?.prescription ? {
+        instructions: appointment.consultation.prescription.instructions,
+        medications: appointment.consultation.prescription.medications.map(med => ({
+          medicineName: med.medicineName,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          duration: med.duration
+        }))
+      } : null,
+      postVisitSummary: appointment.postVisitSummary ? {
+        status: appointment.postVisitSummary.status,
+        summary: appointment.postVisitSummary.summary,
+        medicationSchedule: appointment.postVisitSummary.medicationSchedule,
+        followUpSteps: appointment.postVisitSummary.followUpSteps
+      } : null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

@@ -91,10 +91,11 @@ model Appointment {
   holdExpiresAt DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  symptom       Symptom?
-  aiSummary     AISummary?
-  consultation  Consultation?
-  calendarEvent CalendarEvent[]
+  symptom          Symptom?
+  aiSummary        AISummary?
+  consultation     Consultation?
+  postVisitSummary PostVisitSummary?
+  calendarEvent    CalendarEvent[]
 
   @@index([doctorId, startTime])
 }
@@ -160,3 +161,16 @@ model CalendarEvent {
   patientEventId String?
   doctorEventId  String?
 }
+
+model PostVisitSummary {
+  id                 String      @id @default(uuid())
+  appointmentId      String      @unique
+  appointment        Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  summary            String?
+  medicationSchedule Json?
+  followUpSteps      String[]
+  status             String      // PENDING, SUCCESS, FAILED
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+

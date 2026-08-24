@@ -525,7 +525,7 @@ router.get('/appointments/doctor', authorize(Role.DOCTOR), async (req: AuthReque
     const appointments = await prisma.appointment.findMany({
       where: {
         doctorId: doctorProfile.id, // Query by DoctorProfile primary key ID
-        status: { in: ['CONFIRMED', 'HELD'] }
+        status: { in: ['CONFIRMED', 'HELD', 'COMPLETED'] }
       },
       include: {
         patient: {

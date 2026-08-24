@@ -15,6 +15,8 @@ import PatientDoctors from './pages/PatientDoctors';
 import PatientDoctorDetail from './pages/PatientDoctorDetail';
 import PatientBook from './pages/PatientBook';
 import PatientAppointments from './pages/PatientAppointments';
+import DoctorConsultation from './pages/DoctorConsultation';
+import PatientSummary from './pages/PatientSummary';
 
 function App() {
   return (
@@ -28,6 +30,7 @@ function App() {
         {/* Patient & Doctor Dashboards */}
         <Route path="/patient/dashboard" element={<Navigate to="/patient/doctors" replace />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor/appointments/:id" element={<DoctorConsultation />} />
         
         {/* Patient Portal Routes */}
         <Route element={<PatientLayout />}>
@@ -35,6 +38,7 @@ function App() {
           <Route path="/patient/doctors/:id" element={<PatientDoctorDetail />} />
           <Route path="/patient/book/:doctorId" element={<PatientBook />} />
           <Route path="/patient/appointments" element={<PatientAppointments />} />
+          <Route path="/patient/appointments/:id/summary" element={<PatientSummary />} />
         </Route>
 
         {/* Admin Dashboard Protected Routes */}
