@@ -542,5 +542,53 @@ export const api = {
       throw new Error(data.message || 'Failed to fetch post-visit summary');
     }
     return data;
+  },
+
+  getCalendarStatus: async (): Promise<{ success: boolean; connected: boolean; googleEmail: string | null }> => {
+    const response = await fetch(`${API_URL}/api/google-calendar/status`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch Google Calendar status');
+    }
+    return data;
+  },
+
+  getCalendarConnectUrl: async (): Promise<{ success: boolean; url: string }> => {
+    const response = await fetch(`${API_URL}/api/google-calendar/connect`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to get calendar connection URL');
+    }
+    return data;
+  },
+
+  disconnectCalendar: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch(`${API_URL}/api/google-calendar/disconnect`, {
+      method: 'POST',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to disconnect Google Calendar');
+    }
+    return data;
+  },
+
+  adminGetFailedJobs: async (): Promise<{ success: boolean; jobs: any[]; warning: string | null }> => {
+    const response = await fetch(`${API_URL}/api/admin/jobs/failed`, {
+      method: 'GET',
+      headers: getHeaders(true)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch failed jobs log');
+    }
+    return data;
   }
 };

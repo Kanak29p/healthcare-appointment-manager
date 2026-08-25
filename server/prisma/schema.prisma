@@ -27,16 +27,18 @@ enum UrgencyLevel {
 }
 
 model User {
-  id             String          @id @default(uuid())
+  id             String                    @id @default(uuid())
   name           String
-  email          String          @unique
+  email          String                    @unique
   password       String
   role           Role
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
   patientProfile PatientProfile?
   doctorProfile  DoctorProfile?
   notifications  Notification[]
+  googleCalendarConnection GoogleCalendarConnection?
+  appointmentCalendarEvents AppointmentCalendarEvent[]
 }
 
 model PatientProfile {
@@ -95,7 +97,7 @@ model Appointment {
   aiSummary        AISummary?
   consultation     Consultation?
   postVisitSummary PostVisitSummary?
-  calendarEvent    CalendarEvent[]
+  calendarEvents   AppointmentCalendarEvent[]
 
   @@index([doctorId, startTime])
 }
@@ -154,12 +156,28 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-model CalendarEvent {
-  id             String      @id @default(uuid())
-  appointmentId  String
-  appointment    Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  patientEventId String?
-  doctorEventId  String?
+model GoogleCalendarConnection {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String
+  googleEmail  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AppointmentCalendarEvent {
+  id            String      @id @default(uuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  googleEventId String
+  calendarId    String      @default("primary")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([appointmentId, userId])
 }
 
 model PostVisitSummary {

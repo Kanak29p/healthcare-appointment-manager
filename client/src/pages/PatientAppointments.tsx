@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { PatientAppointmentInfo, Slot } from '../services/api';
 import { CalendarDays, RefreshCw, XCircle, Stethoscope } from 'lucide-react';
+import CalendarSettings from '../components/CalendarSettings';
 
 export default function PatientAppointments() {
   const [appointments, setAppointments] = useState<PatientAppointmentInfo[]>([]);
@@ -133,6 +134,8 @@ export default function PatientAppointments() {
         <h1 className="text-2xl font-bold text-white">My Appointments</h1>
         <p className="text-slate-400 text-sm mt-1">Manage and track your schedule, reschedules, and checkup summaries.</p>
       </div>
+
+      <CalendarSettings />
 
       {loading ? (
         <div className="flex items-center justify-center p-20">

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import type { FullUser } from '../services/api';
-import { Activity, LogOut, User as UserIcon, RefreshCw, AlertCircle, Calendar } from 'lucide-react';
+import { Activity, LogOut, User as UserIcon, RefreshCw, AlertCircle, Calendar, ShieldAlert, AlertTriangle, CheckCircle } from 'lucide-react';
+import CalendarSettings from '../components/CalendarSettings';
 
 interface DashboardFrameProps {
   title: string;
@@ -249,6 +250,8 @@ export function DoctorDashboard() {
             <p className="text-slate-400 text-sm mt-1">Review upcoming appointments, record prescriptions, and check patient logs.</p>
           </div>
 
+          <CalendarSettings />
+
           {loading ? (
             <div className="flex items-center justify-center p-20">
               <RefreshCw className="animate-spin h-7 w-7 text-indigo-500 mr-3" />
@@ -434,11 +437,31 @@ export function DoctorDashboard() {
 // 3. Admin Dashboard
 export function AdminDashboard() {
   const [user, setUser] = useState<FullUser | null>(null);
+  const [failedJobs, setFailedJobs] = useState<any[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+  const [redisWarning, setRedisWarning] = useState<string | null>(null);
+
+  const fetchJobs = async () => {
+    try {
+      setLoadingJobs(true);
+      setJobsError(null);
+      const res = await api.adminGetFailedJobs();
+      setFailedJobs(res.jobs || []);
+      setRedisWarning(res.warning);
+    } catch (err: any) {
+      console.error(err);
+      setJobsError(err.message || 'Failed to retrieve background jobs log');
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
 
   useEffect(() => {
     api.getMe()
       .then(res => setUser(res.user))
       .catch(console.error);
+    fetchJobs();
   }, []);
 
   return (
@@ -476,6 +499,95 @@ export function AdminDashboard() {
             System Online & Connected
           </div>
         </div>
+      </div>
+
+      {/* Failed Jobs Monitoring Panel */}
+      <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-indigo-950/50 text-indigo-400 rounded-lg">
+              <ShieldAlert className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">Background Queues & Failed Jobs</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Real-time status of email reminders and medication worker queues</p>
+            </div>
+          </div>
+
+          <button
+            onClick={fetchJobs}
+            disabled={loadingJobs}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-950 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${loadingJobs ? 'animate-spin text-indigo-500' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        {redisWarning && (
+          <div className="p-3.5 rounded-xl bg-amber-955/20 border border-amber-900/40 text-amber-405 text-xs flex items-start space-x-2.5">
+            <AlertTriangle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold">Redis Connection Offline:</span>
+              <p className="mt-0.5 text-slate-450 text-[11px] leading-relaxed">{redisWarning}</p>
+            </div>
+          </div>
+        )}
+
+        {jobsError && (
+          <div className="p-3 rounded-lg bg-rose-955/35 border border-rose-900/50 text-rose-455 text-xs">
+            {jobsError}
+          </div>
+        )}
+
+        {!loadingJobs && !jobsError && (
+          <>
+            {failedJobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
+                <CheckCircle className="h-8 w-8 text-emerald-500" />
+                <p className="text-sm font-semibold text-slate-200">System Queues Healthy</p>
+                <p className="text-xs text-slate-505">No failed background worker jobs are currently recorded in the queue.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-450">
+                      <th className="py-2.5 font-bold uppercase tracking-wider text-[10px]">Job Type</th>
+                      <th className="py-2.5 font-bold uppercase tracking-wider text-[10px]">Job ID</th>
+                      <th className="py-2.5 font-bold uppercase tracking-wider text-[10px]">Failure Time</th>
+                      <th className="py-2.5 font-bold uppercase tracking-wider text-[10px] text-center">Attempts</th>
+                      <th className="py-2.5 font-bold uppercase tracking-wider text-[10px] text-right">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850/40">
+                    {failedJobs.map((job) => (
+                      <tr key={job.jobId} className="hover:bg-slate-850/20 text-slate-300">
+                        <td className="py-3 font-semibold">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            job.jobType.includes('Email') 
+                              ? 'bg-sky-950 text-sky-400 border border-sky-900/35' 
+                              : 'bg-violet-955/30 text-violet-405 border border-violet-900/35'
+                          }`}>
+                            {job.jobType}
+                          </span>
+                        </td>
+                        <td className="py-3 font-mono text-[11px] text-slate-405">{job.jobId}</td>
+                        <td className="py-3 text-slate-405">
+                          {new Date(job.failedTimestamp).toLocaleString()}
+                        </td>
+                        <td className="py-3 text-center font-bold text-slate-405">{job.retryCount}</td>
+                        <td className="py-3 text-right text-slate-405 italic max-w-xs truncate" title={job.safeErrorMessage}>
+                          {job.safeErrorMessage}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

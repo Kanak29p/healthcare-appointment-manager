@@ -6,6 +6,7 @@ import adminRouter from './routes/admin';
 import patientRouter from './routes/patient';
 import appointmentRouter from './routes/appointment';
 import doctorRouter from './routes/doctor';
+import googleCalendarRouter from './routes/google-calendar';
 import { errorHandler } from './middleware/error';
 
 // Load environment variables
@@ -35,6 +36,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api', patientRouter);
 app.use('/api', appointmentRouter);
 app.use('/api', doctorRouter);
+app.use('/api', googleCalendarRouter);
 
 // Fallback for undefined routes
 app.use((req, res, next) => {

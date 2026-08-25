@@ -3,9 +3,10 @@ import { z } from 'zod';
 import * as bcrypt from 'bcryptjs';
 import { PrismaClient, Role } from '@prisma/client';
 import { AppError } from '../middleware/error';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { queueDoctorLeaveEmail, emailQueue } from '../queues/email.queue';
 import { medicationQueue } from '../queues/medication.queue';
+import { googleCalendarService } from '../services/google-calendar.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -445,6 +446,10 @@ router.post('/doctors/:id/leaves', async (req, res, next) => {
         data: { status: 'CANCELLED' }
       });
 
+      // Delete Google Calendar events asynchronously
+      googleCalendarService.deleteEvent(appt.patient.userId, appt.id).catch(err => {});
+      googleCalendarService.deleteEvent(doctor.id, appt.id).catch(err => {});
+
       const appointmentDateStr = appt.startTime.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -515,7 +520,7 @@ router.delete('/doctors/:id/leaves/:leaveId', async (req, res, next) => {
 });
 
 // 12. GET /api/admin/jobs/failed
-router.get('/jobs/failed', async (req, res, next) => {
+router.get('/jobs/failed', authenticate, authorize(Role.ADMIN), async (req: AuthRequest, res, next) => {
   try {
     let emailFailed: any[] = [];
     let medFailed: any[] = [];

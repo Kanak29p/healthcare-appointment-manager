@@ -113,3 +113,43 @@ If `EMAIL_HOST` is left blank in the `.env` configuration:
 
 ## 9. Timezone Assumption
 AegisHealth assumes **UTC** as the baseline application timezone for slot holds, appointment dates, leaves, and medication scheduling. This ensures that date-time conversions do not shift or cause drift across different clients and server environments.
+
+---
+
+## 10. Google Calendar OAuth 2.0 Integration Setup
+
+AegisHealth supports syncing medical checkups directly to patients' and doctors' primary Google Calendars using the Google Calendar API and OAuth 2.0.
+
+### Google Cloud Console Configuration Steps
+1. **Google Cloud Project Creation:** Create a new project in the [Google Cloud Console](https://console.cloud.google.com/).
+2. **Enable Calendar API:** Navigate to the API Library and enable the **Google Calendar API** for your project.
+3. **OAuth Consent Screen:**
+   - Go to OAuth Consent Screen, select **External** user type.
+   - Fill in app name (`AegisHealth`), support email, and developer contact.
+   - Add scope: `https://www.googleapis.com/auth/calendar.events` (used to insert, update, and delete events).
+   - Add your test Google accounts under "Test users".
+4. **OAuth Web Client ID Setup:**
+   - Go to Credentials, click **Create Credentials** -> **OAuth client ID**.
+   - Select application type **Web application**.
+   - Add **Authorized Redirect URIs**:
+     `http://localhost:5000/api/google-calendar/callback`
+   - Download the generated Client ID and Client Secret.
+
+### Environment Variables
+Configure the following keys in `server/.env`:
+```env
+GOOGLE_CLIENT_ID="your_google_client_id"
+GOOGLE_CLIENT_SECRET="your_google_client_secret"
+GOOGLE_REDIRECT_URI="http://localhost:5000/api/google-calendar/callback"
+```
+
+### Calendar Connection Behavior
+- **How to Connect:** Logged-in patients and doctors will see a **Google Calendar** settings card on their respective dashboards. Clicking `[Connect Google Calendar]` redirects to Google's consent screen. After authorization, the connection status is displayed, and access tokens are refreshed automatically behind the scenes using the stored refresh token.
+- **Calendar Event Sync Details:**
+  - **Booking/Confirm:** A calendar event is created on the primary calendar of the patient and/or doctor (if connected).
+  - **Event Contents:** Contains Dr. Name, Specialization, Patient Name, Status, and AegisHealth Appointment ID. It **never** contains symptoms, diagnoses, or clinical notes.
+  - **Reschedule:** Modifies the existing calendar event details (start, end, description) instead of creating duplicates.
+  - **Cancellation:** Deletes the event on Google Calendar.
+- **Graceful Failure Handling:**
+  - If Google APIs are unavailable, or credentials are not configured, the operations fail/log silently.
+  - **Calendar failures never block booking, rescheduling, or cancellation** flow in the AegisHealth portal; checkups remain fully successful, and raw Google API errors are never exposed to patients.

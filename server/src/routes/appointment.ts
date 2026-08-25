@@ -6,6 +6,7 @@ import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { cleanupExpiredHolds } from '../utils/hold';
 import { LLMService } from '../services/llm.service';
 import { queueConfirmationEmail, queueCancellationEmail, queueRescheduledEmail } from '../queues/email.queue';
+import { googleCalendarService } from '../services/google-calendar.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -311,6 +312,27 @@ router.post('/appointments/:id/confirm', authorize(Role.PATIENT), async (req: Au
       status: 'CONFIRMED'
     }).catch(err => console.error('[Queue Error] Failed to queue confirmation email:', err));
 
+    // Asynchronously create Google Calendar events (does not block confirm or booking success)
+    (async () => {
+      try {
+        const apptDetails = {
+          appointmentId: appointment.id,
+          summary: `Medical Appointment with Dr. ${appointment.doctor.user.name}`,
+          description: `Provider: Dr. ${appointment.doctor.user.name}\nSpecialization: ${appointment.doctor.specialization}\nPatient: ${appointment.patient.user.name}\nStatus: CONFIRMED\nAppointment ID: ${appointment.id}\n(Refreshed via AegisHealth)`,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime
+        };
+
+        // Create event for patient if connected
+        await googleCalendarService.createEvent(appointment.patient.userId, apptDetails);
+
+        // Create event for doctor if connected
+        await googleCalendarService.createEvent(appointment.doctor.userId, apptDetails);
+      } catch (calErr: any) {
+        console.error('[Google Calendar Integration Error] Failed to create event:', calErr.message || calErr);
+      }
+    })();
+
     res.status(200).json({
       success: true,
       message: aiSummaryResponse.status === 'SUCCESS' 
@@ -390,6 +412,16 @@ router.patch('/appointments/:id/cancel', authorize(Role.PATIENT), async (req: Au
       appointmentTime: appointmentTimeStr,
       status: 'CANCELLED'
     }).catch(err => console.error('[Queue Error] Failed to queue cancellation email:', err));
+
+    // Asynchronously delete Google Calendar events (does not block cancel success)
+    (async () => {
+      try {
+        await googleCalendarService.deleteEvent(appointment.patient.userId, appointment.id);
+        await googleCalendarService.deleteEvent(appointment.doctor.userId, appointment.id);
+      } catch (calErr: any) {
+        console.error('[Google Calendar Integration Error] Failed to delete event:', calErr.message || calErr);
+      }
+    })();
 
     res.status(200).json({
       success: true,
@@ -526,6 +558,16 @@ router.patch('/appointments/:id/reschedule', authorize(Role.PATIENT), async (req
         newDate: newScheduleStr,
         status: 'CONFIRMED'
       }).catch(err => console.error('[Queue Error] Failed to queue reschedule email:', err));
+
+      // Asynchronously update Google Calendar events (does not block reschedule success)
+      (async () => {
+        try {
+          await googleCalendarService.updateEvent(appointment.patient.userId, appointment.id, newStart, newEnd);
+          await googleCalendarService.updateEvent(appointment.doctor.userId, appointment.id, newStart, newEnd);
+        } catch (calErr: any) {
+          console.error('[Google Calendar Integration Error] Failed to update event:', calErr.message || calErr);
+        }
+      })();
 
       res.status(200).json({
         success: true,
