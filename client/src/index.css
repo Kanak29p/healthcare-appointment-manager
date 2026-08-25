@@ -3,6 +3,6 @@
 /* Base styling overrides or custom font setups if needed */
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white;
+    @apply bg-slate-50 text-slate-800 font-sans antialiased selection:bg-teal-500 selection:text-white;
   }
 }

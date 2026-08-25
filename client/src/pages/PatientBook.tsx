@@ -133,28 +133,28 @@ export default function PatientBook() {
       <div>
         <Link
           to={`/patient/doctors/${doctorId}`}
-          className="inline-flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-800 transition-colors font-bold"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Change date or slot selection</span>
         </Link>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
         {holding ? (
           <div className="text-center py-12 space-y-4">
-            <RefreshCw className="animate-spin h-8 w-8 text-indigo-500 mx-auto" />
-            <p className="text-slate-400 text-sm">Locking slot hold & verifying details...</p>
+            <RefreshCw className="animate-spin h-8 w-8 text-teal-600 mx-auto" />
+            <p className="text-slate-500 text-xs">Locking slot hold & verifying details...</p>
           </div>
         ) : holdError ? (
           <div className="text-center py-8 space-y-4">
-            <ShieldAlert className="h-12 w-12 text-rose-500 mx-auto" />
-            <h2 className="text-lg font-bold text-white">Booking Unavailable</h2>
-            <p className="text-sm text-slate-450 max-w-md mx-auto">{holdError}</p>
+            <ShieldAlert className="h-12 w-12 text-rose-600 mx-auto" />
+            <h2 className="text-lg font-bold text-slate-900">Booking Unavailable</h2>
+            <p className="text-sm text-slate-500 max-w-md mx-auto">{holdError}</p>
             <div className="pt-4">
               <Link
                 to={`/patient/doctors/${doctorId}`}
-                className="px-6 py-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-800 text-slate-350 hover:text-white rounded-xl text-sm font-semibold transition"
+                className="px-6 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-250 text-slate-700 rounded-xl text-sm font-bold transition inline-block"
               >
                 Go Back to Schedules
               </Link>
@@ -163,16 +163,16 @@ export default function PatientBook() {
         ) : (
           <>
             {/* Header info */}
-            <div className="border-b border-slate-850 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="border-b border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-xl font-bold text-white">Confirm Your Visit</h1>
-                <p className="text-slate-400 text-xs mt-1">Provide symptoms to complete the checkup booking.</p>
+                <h1 className="text-xl font-black text-slate-900">Confirm Your Visit</h1>
+                <p className="text-slate-550 text-xs mt-1">Provide symptoms to complete the checkup booking.</p>
               </div>
 
               {/* Hold Countdown Timer */}
               {!success && !timerExpired && (
-                <div className="inline-flex items-center space-x-2.5 px-4 py-2 rounded-xl bg-amber-955/10 border border-amber-900/40 text-amber-500 self-start sm:self-auto shadow-sm">
-                  <Clock className="h-4.5 w-4.5 animate-pulse text-amber-500" />
+                <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-amber-50 border border-amber-250 text-amber-700 self-start sm:self-auto shadow-sm">
+                  <Clock className="h-4.5 w-4.5 animate-pulse text-amber-600" />
                   <span className="font-mono text-xs font-bold uppercase tracking-wider">
                     Hold: {formatTimerLabel(secondsLeft)}
                   </span>
@@ -181,19 +181,19 @@ export default function PatientBook() {
             </div>
 
             {/* General appointment summary info */}
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-850 space-y-3.5 text-sm text-slate-350">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 space-y-3.5 text-xs text-slate-650">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Practitioner</span>
-                  <p className="text-white font-medium mt-1">{doctor?.name}</p>
-                  <p className="text-indigo-400 text-xs mt-0.5">{doctor?.specialization}</p>
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Practitioner</span>
+                  <p className="text-slate-900 font-bold mt-1 text-sm">{doctor?.name}</p>
+                  <p className="text-teal-700 text-xs font-semibold mt-0.5">{doctor?.specialization}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Schedule Time</span>
-                  <p className="text-white font-medium mt-1">
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Schedule Time</span>
+                  <p className="text-slate-900 font-bold mt-1 text-sm">
                     {date ? new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : ''}
                   </p>
-                  <p className="text-slate-450 font-mono text-xs mt-0.5">
+                  <p className="text-slate-500 font-mono text-xs mt-0.5">
                     {formatTime(start)} - {formatTime(end)} (UTC)
                   </p>
                 </div>
@@ -202,33 +202,33 @@ export default function PatientBook() {
 
             {/* Error / Success state blocks */}
             {confirmError && (
-              <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-900/50 text-rose-455 text-sm flex items-start space-x-2.5">
-                <ShieldAlert className="h-5 w-5 flex-shrink-0 mt-0.5 text-rose-500" />
-                <span className="font-medium">{confirmError}</span>
+              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2.5">
+                <ShieldAlert className="h-5 w-5 flex-shrink-0 mt-0.5 text-rose-600" />
+                <span className="font-semibold">{confirmError}</span>
               </div>
             )}
 
             {success && (
-              <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-900/50 text-emerald-400 text-sm flex items-start space-x-2.5 animate-fade-in">
-                <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-emerald-555" />
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-250 text-emerald-700 text-xs flex items-start space-x-2.5 animate-fade-in">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-emerald-600" />
                 <div>
-                  <p className="font-semibold">Appointment Booked Successfully!</p>
-                  <p className="text-xs text-emerald-500 mt-1">Redirecting you to dashboard...</p>
+                  <p className="font-bold">Appointment Booked Successfully!</p>
+                  <p className="text-xs text-emerald-600 mt-1">Redirecting you to dashboard...</p>
                 </div>
               </div>
             )}
 
             {timerExpired && !success && (
-              <div className="p-6 rounded-xl bg-rose-950/20 border border-rose-900/40 text-center space-y-4">
-                <ShieldAlert className="h-10 w-10 text-rose-500 mx-auto" />
-                <h3 className="text-white font-bold">Hold Session Expired</h3>
-                <p className="text-xs text-slate-455 max-w-sm mx-auto">
+              <div className="p-6 rounded-xl bg-rose-50 border border-rose-100 text-center space-y-4">
+                <ShieldAlert className="h-10 w-10 text-rose-600 mx-auto" />
+                <h3 className="text-slate-900 font-bold">Hold Session Expired</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   The temporary hold on this slot expired. It has been released for other patients to select.
                 </p>
                 <div className="pt-2">
                   <Link
                     to={`/patient/doctors/${doctorId}`}
-                    className="inline-flex justify-center items-center px-4 py-2 bg-indigo-650 hover:bg-indigo-550 text-white rounded-xl text-xs font-semibold transition"
+                    className="inline-flex justify-center items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
                   >
                     Select Another Slot
                   </Link>
@@ -240,36 +240,27 @@ export default function PatientBook() {
             {!timerExpired && !success && (
               <form onSubmit={handleConfirm} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                    Describe your symptoms
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Describe your symptoms <span className="text-rose-500">*</span>
                   </label>
                   <textarea
                     required
                     rows={4}
                     value={symptoms}
                     onChange={(e) => setSymptoms(e.target.value)}
-                    className="block w-full px-4 py-3 bg-slate-950 border border-slate-850 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    placeholder="Describe your symptoms here (e.g. persistent headaches, joint soreness for the last 3 days)..."
+                    className="block w-full px-4 py-3 bg-white border border-slate-350 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 text-xs"
+                    placeholder="Please provide details (e.g. onset, duration, pain scale, other notes)..."
                   />
-                  <p className="text-xs text-amber-500 font-medium mt-1.5">
-                    Your symptoms will be shared with the doctor and used to prepare a pre-visit summary.
-                  </p>
                 </div>
 
-                <div className="flex justify-end pt-4 border-t border-slate-855 space-x-3">
-                  <Link
-                    to={`/patient/doctors/${doctorId}`}
-                    className="px-6 py-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-800 text-slate-450 hover:text-white rounded-xl text-sm font-semibold transition"
-                  >
-                    Cancel
-                  </Link>
+                <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={confirming || symptoms.length < 5}
-                    className="inline-flex items-center space-x-2 px-6 py-2.5 bg-indigo-650 hover:bg-indigo-550 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-600/10 cursor-pointer disabled:opacity-50"
+                    disabled={confirming}
+                    className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl border border-transparent text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-sm disabled:opacity-50 transition cursor-pointer"
                   >
-                    {confirming ? 'Booking...' : 'Confirm Appointment'}
-                    {!confirming && <ChevronRight className="h-4 w-4" />}
+                    {confirming ? 'Confirming Appointment...' : 'Confirm Appointment'}
+                    {!confirming && <ChevronRight className="ml-1.5 h-4 w-4" />}
                   </button>
                 </div>
               </form>

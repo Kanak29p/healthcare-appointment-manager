@@ -63,41 +63,41 @@ export default function CalendarSettings() {
 
   if (loading) {
     return (
-      <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center space-x-2 text-slate-400 text-xs">
-        <RefreshCw className="animate-spin h-4 w-4 text-indigo-500" />
+      <div className="p-5 rounded-2xl bg-white border border-slate-200 flex items-center justify-center space-x-2 text-slate-500 text-xs shadow-sm">
+        <RefreshCw className="animate-spin h-4 w-4 text-teal-600" />
         <span>Loading calendar status...</span>
       </div>
     );
   }
 
   return (
-    <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-      <div className="flex items-center justify-between border-b border-slate-850 pb-3">
+    <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-4 shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center space-x-2.5">
-          <div className="p-2 bg-indigo-950/50 text-indigo-400 rounded-lg">
+          <div className="p-2 bg-teal-50 text-teal-600 rounded-lg">
             <Calendar className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Google Calendar Integration</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Automatically sync consultations to your primary calendar</p>
+            <h3 className="text-sm font-bold text-slate-900">Google Calendar Sync</h3>
+            <p className="text-[10px] text-slate-500 mt-0.5">Automatically sync AegisHealth consultations to your calendar</p>
           </div>
         </div>
 
         {connected ? (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/50 text-emerald-400 border border-emerald-950/20">
-            <CheckCircle2 className="h-3 w-3" />
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-250">
+            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
             <span>Connected</span>
           </span>
         ) : (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-950 text-slate-450 border border-slate-800">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-200">
             Not Connected
           </span>
         )}
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-rose-955/35 border border-rose-900/50 text-rose-455 text-xs flex items-start space-x-2">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600" />
           <span>{error}</span>
         </div>
       )}
@@ -105,12 +105,12 @@ export default function CalendarSettings() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
         <div>
           {connected ? (
-            <p className="text-slate-300">
-              Synced with: <span className="font-mono text-indigo-350">{googleEmail || 'Google Account'}</span>
+            <p className="text-slate-650">
+              Synced with: <span className="font-semibold text-teal-700">{googleEmail || 'Google Account'}</span>
             </p>
           ) : (
-            <p className="text-slate-450">
-              No calendar connected. Connect your Google Account to automatically add AegisHealth checkup slots.
+            <p className="text-slate-500 leading-relaxed">
+              No calendar connected. Connect your Google Account to automatically sync AegisHealth slots.
             </p>
           )}
         </div>
@@ -120,7 +120,7 @@ export default function CalendarSettings() {
             <button
               onClick={handleDisconnect}
               disabled={actionLoading}
-              className="px-4 py-2 border border-rose-900/30 hover:border-rose-900/60 bg-rose-955/20 hover:bg-rose-955/30 text-rose-400 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 shrink-0"
+              className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-650 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50 shrink-0"
             >
               {actionLoading ? 'Disconnecting...' : 'Disconnect'}
             </button>
@@ -128,7 +128,7 @@ export default function CalendarSettings() {
             <button
               onClick={handleConnect}
               disabled={actionLoading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 shrink-0"
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer disabled:opacity-50 shrink-0"
             >
               {actionLoading ? 'Connecting...' : 'Connect Google Calendar'}
             </button>

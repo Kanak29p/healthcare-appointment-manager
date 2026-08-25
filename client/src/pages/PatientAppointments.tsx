@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { PatientAppointmentInfo, Slot } from '../services/api';
-import { CalendarDays, RefreshCw, XCircle, Stethoscope } from 'lucide-react';
+import { CalendarDays, RefreshCw, XCircle, Stethoscope, Clock } from 'lucide-react';
 import CalendarSettings from '../components/CalendarSettings';
 
 export default function PatientAppointments() {
@@ -66,10 +66,6 @@ export default function PatientAppointments() {
     setSlotsLoading(true);
     setSlotsError(null);
     try {
-      // Find the appointment to get the doctor's ID
-      const appt = appointments.find(a => a.id === reschedulingId);
-      if (!appt) return;
-      
       const res = await api.getDoctorSlots(doctorId, date);
       setSlots(res.slots);
     } catch (err: any) {
@@ -131,33 +127,33 @@ export default function PatientAppointments() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">My Appointments</h1>
-        <p className="text-slate-400 text-sm mt-1">Manage and track your schedule, reschedules, and checkup summaries.</p>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">My Appointments</h1>
+        <p className="text-slate-500 text-xs mt-1">Manage and track your schedule, reschedules, and checkup summaries.</p>
       </div>
 
       <CalendarSettings />
 
       {loading ? (
-        <div className="flex items-center justify-center p-20">
-          <RefreshCw className="animate-spin h-7 w-7 text-indigo-500 mr-3" />
-          <span className="text-slate-400">Fetching your bookings list...</span>
+        <div className="flex items-center justify-center p-20 bg-white border border-slate-150 rounded-2xl">
+          <RefreshCw className="animate-spin h-6 w-6 text-teal-600 mr-2" />
+          <span className="text-slate-500 text-xs">Fetching your bookings list...</span>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-900/50 text-rose-455 text-sm">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-750 text-xs font-semibold">
           {error}
         </div>
       ) : appointments.length === 0 ? (
-        <div className="p-12 text-center rounded-xl bg-slate-900 border border-slate-800 text-slate-500 text-sm">
-          <CalendarDays className="h-10 w-10 text-slate-600 mx-auto mb-4" />
-          <p className="font-semibold text-white">No Appointments Found</p>
-          <p className="text-xs text-slate-550 mt-1">Search for a practitioner to schedule your first consultation.</p>
+        <div className="p-12 text-center rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold">
+          <CalendarDays className="h-10 w-10 text-slate-350 mx-auto mb-4" />
+          <p className="font-bold text-slate-900 text-sm">No Appointments Found</p>
+          <p className="text-slate-450 mt-1">Search for a practitioner to schedule your first consultation.</p>
         </div>
       ) : (
         <div className="space-y-8">
           
           {/* 1. Upcoming Appointments */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-405 uppercase tracking-wider pb-1.5 border-b border-slate-900">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-200">
               Upcoming Bookings
             </h3>
             {upcomingAppts.length === 0 ? (
@@ -170,30 +166,30 @@ export default function PatientAppointments() {
                   return (
                     <div
                       key={appt.id}
-                      className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 flex flex-col justify-between"
+                      className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between"
                     >
                       <div>
-                        <div className="flex items-center space-x-3.5 mb-3">
-                          <div className="p-2 bg-indigo-950/50 text-indigo-400 rounded-lg">
+                        <div className="flex items-center space-x-3.5 mb-3 border-b border-slate-100 pb-3">
+                          <div className="p-2 bg-teal-50 text-teal-600 rounded-lg">
                             <Stethoscope className="h-4.5 w-4.5" />
                           </div>
                           <div>
-                            <h4 className="font-semibold text-white text-sm">{appt.doctorName}</h4>
-                            <p className="text-indigo-400 text-xs mt-0.5">{appt.specialization}</p>
+                            <h4 className="font-bold text-slate-900 text-sm">{appt.doctorName}</h4>
+                            <p className="text-teal-700 text-xs font-semibold mt-0.5">{appt.specialization}</p>
                           </div>
                         </div>
 
-                        <div className="mt-3.5 space-y-2 text-xs text-slate-350">
+                        <div className="mt-3.5 space-y-2 text-xs text-slate-650">
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-500">Date & Time:</span>
-                            <span className="font-mono text-slate-300">
+                            <span className="text-slate-550">Date & Time:</span>
+                            <span className="font-bold text-slate-800">
                               {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeShort(appt.startTime)} - {formatTimeShort(appt.endTime)} (UTC)
                             </span>
                           </div>
                           {appt.symptoms && (
-                            <div className="mt-2 pt-2 border-t border-slate-850">
-                              <span className="text-slate-550 block mb-1">Symptoms Description:</span>
-                              <p className="text-slate-400 italic bg-slate-950/30 p-2 rounded text-xs leading-normal">
+                            <div className="mt-2 pt-2 border-t border-slate-100">
+                              <span className="text-slate-500 block mb-1 font-bold text-[10px] uppercase tracking-wider">Symptoms Description:</span>
+                              <p className="text-slate-700 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs leading-normal">
                                 "{appt.symptoms}"
                               </p>
                             </div>
@@ -203,46 +199,36 @@ export default function PatientAppointments() {
 
                       {/* Rescheduling Form Drawer (Inline Accordion) */}
                       {isEditing && (
-                        <div className="mt-4 pt-4 border-t border-slate-850 space-y-4 animate-fade-in">
+                        <div className="mt-4 pt-4 border-t border-slate-100 space-y-4 animate-fade-in">
                           <div className="flex items-center justify-between gap-4">
-                            <span className="text-xs font-semibold text-white">Select Reschedule Time:</span>
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Reschedule Date:</span>
                             <input
                               type="date"
                               value={rescheduleDate}
-                              onChange={(e) => handleRescheduleDateChange(appt.doctorName, e.target.value)} // Note: We need doctorId, appt.doctorName doesn't contain ID. Wait!
-                              // Wait, does the backend GET /api/appointments/my return doctorId?
-                              // Let's check `formatted` object in server getPatientAppointments:
-                              // Ah! `formatted = appointments.map(appt => ({ id: appt.id, doctorName: appt.doctor.name, ... }))`. We did NOT include doctorId or doctorProfileId!
-                              // But wait! If we edit getPatientAppointments in `server/src/routes/appointment.ts` to return `doctorId: appt.doctorId` (which is the user ID of the doctor), we can access it!
-                              // Let's make sure our reschedule date change calls with the doctorId:
-                              // Let's check if the appointment object has doctorId.
-                              // Yes! Let's modify the server router to return doctorId inside getPatientAppointments formatted mapping.
-                              // We will do that! Let's look at `server/src/routes/appointment.ts` around line 430.
-                              // Yes, we will correct that server endpoint to include doctorId. For now, let's write `appt.doctorId` in the client code!
+                              onChange={(e) => handleRescheduleDateChange(appt.doctorId || '', e.target.value)}
+                              className="px-3 py-2 bg-white border border-slate-350 rounded-xl text-slate-800 text-xs focus:ring-teal-500"
                             />
                           </div>
 
-                          {/* Date inputs search trigger */}
                           <div className="flex justify-end">
                             <button
                               type="button"
-                              onClick={() => {
-                                // Find appointment doctor userId in the appointment
-                                const apptObj = appointments.find(a => a.id === appt.id) as any;
-                                fetchRescheduleSlots(apptObj.doctorId || '', rescheduleDate);
-                              }}
-                              className="px-3.5 py-1.5 bg-slate-955 border border-slate-800 text-[10px] font-semibold text-slate-300 hover:text-white rounded-lg transition"
+                              onClick={() => fetchRescheduleSlots(appt.doctorId || '', rescheduleDate)}
+                              className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition cursor-pointer"
                             >
                               Check Slots
                             </button>
                           </div>
 
                           {slotsLoading ? (
-                            <div className="text-center text-xs text-slate-500">Checking schedules...</div>
+                            <div className="text-center text-xs text-slate-500 py-2 flex items-center justify-center space-x-1.5">
+                              <RefreshCw className="animate-spin h-3.5 w-3.5 text-teal-600" />
+                              <span>Checking schedules...</span>
+                            </div>
                           ) : slotsError ? (
-                            <div className="text-[10px] text-rose-500">{slotsError}</div>
+                            <div className="text-xs text-rose-700 font-semibold">{slotsError}</div>
                           ) : slots.length === 0 ? (
-                            <div className="text-[10px] text-slate-500 italic">No available times found. Try another date.</div>
+                            <div className="text-xs text-slate-500 italic py-2">No available times found. Try another date.</div>
                           ) : (
                             <div className="grid grid-cols-3 gap-2">
                               {slots.filter(s => s.status === 'AVAILABLE').map((slot, sIdx) => {
@@ -252,10 +238,10 @@ export default function PatientAppointments() {
                                     key={sIdx}
                                     type="button"
                                     onClick={() => setSelectedSlot(slot)}
-                                    className={`px-2 py-1.5 rounded-lg border text-center font-mono text-[10px] font-semibold transition ${
+                                    className={`px-2 py-1.5 rounded-lg border text-center font-mono text-[10px] font-bold transition ${
                                       isSel 
-                                        ? 'bg-indigo-650 border-indigo-500 text-white' 
-                                        : 'bg-slate-950 border-slate-850 text-slate-400 hover:text-white'
+                                        ? 'bg-teal-650 border-teal-500 text-white shadow-sm' 
+                                        : 'bg-white border-slate-250 text-slate-650 hover:border-teal-500 hover:bg-teal-50/10'
                                     }`}
                                   >
                                     {formatTimeStr(slot.startTime)}
@@ -265,11 +251,11 @@ export default function PatientAppointments() {
                             </div>
                           )}
 
-                          <div className="flex justify-end space-x-2 pt-2 border-t border-slate-850">
+                          <div className="flex justify-end space-x-2 pt-2 border-t border-slate-150">
                             <button
                               type="button"
                               onClick={() => setReschedulingId(null)}
-                              className="px-3 py-1.5 bg-slate-950 border border-slate-800 text-[10px] font-semibold text-slate-400 rounded-lg hover:text-white"
+                              className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600 rounded-lg hover:bg-slate-100"
                             >
                               Cancel
                             </button>
@@ -277,7 +263,7 @@ export default function PatientAppointments() {
                               type="button"
                               disabled={!selectedSlot || savingReschedule}
                               onClick={() => handleConfirmReschedule(appt.id)}
-                              className="px-3.5 py-1.5 bg-indigo-650 hover:bg-indigo-550 text-[10px] font-semibold text-white rounded-lg disabled:opacity-50"
+                              className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white rounded-lg disabled:opacity-50"
                             >
                               {savingReschedule ? 'Saving...' : 'Save Reschedule'}
                             </button>
@@ -287,16 +273,16 @@ export default function PatientAppointments() {
 
                       {/* Action buttons */}
                       {!isEditing && (
-                        <div className="mt-5 pt-3.5 border-t border-slate-850 flex items-center justify-end space-x-3">
+                        <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-3">
                           <button
                             onClick={() => handleCancel(appt.id)}
-                            className="px-4 py-2 bg-slate-950 hover:bg-rose-955/20 border border-slate-800 text-slate-450 hover:text-rose-400 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                            className="px-4 py-2 bg-slate-50 hover:bg-rose-50 border border-slate-200 text-slate-600 hover:text-rose-600 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={() => handleStartReschedule(appt)}
-                            className="px-4 py-2 bg-indigo-650 hover:bg-indigo-550 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
                           >
                             Reschedule
                           </button>
@@ -311,28 +297,29 @@ export default function PatientAppointments() {
 
           {/* 2. Past Appointments */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-405 uppercase tracking-wider pb-1.5 border-b border-slate-900">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-200">
               Completed Visits
             </h3>
             {pastAppts.length === 0 ? (
               <p className="text-slate-500 text-xs italic py-2">No historical consultations recorded.</p>
             ) : (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                <div className="divide-y divide-slate-850">
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="divide-y divide-slate-150">
                   {pastAppts.map((appt) => (
                     <div key={appt.id} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                       <div>
-                        <span className="font-semibold text-white text-sm">{appt.doctorName}</span>
-                        <p className="text-slate-450 text-xs mt-0.5">{appt.specialization}</p>
+                        <span className="font-bold text-slate-900 text-sm">{appt.doctorName}</span>
+                        <p className="text-teal-700 text-xs font-semibold mt-0.5">{appt.specialization}</p>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <div className="text-right text-xs font-mono text-slate-400">
-                          {new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeShort(appt.startTime)} (UTC)
+                        <div className="text-right text-xs font-mono text-slate-500 flex items-center space-x-1">
+                          <Clock className="h-3.5 w-3.5 text-slate-400" />
+                          <span>{new Date(appt.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} | {formatTimeShort(appt.startTime)} (UTC)</span>
                         </div>
                         {appt.status === 'COMPLETED' && (
                           <Link
                             to={`/patient/appointments/${appt.id}/summary`}
-                            className="px-3.5 py-1.5 bg-indigo-650 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition"
+                            className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-750 text-white rounded-xl text-xs font-bold shadow-sm transition"
                           >
                             View Summary
                           </Link>
@@ -347,22 +334,22 @@ export default function PatientAppointments() {
 
           {/* 3. Cancelled Appointments */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-405 uppercase tracking-wider pb-1.5 border-b border-slate-900">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-200">
               Cancelled Visits
             </h3>
             {cancelledAppts.length === 0 ? (
               <p className="text-slate-500 text-xs italic py-2">No cancelled appointments recorded.</p>
             ) : (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden opacity-70 shadow-xl">
-                <div className="divide-y divide-slate-850">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden opacity-70">
+                <div className="divide-y divide-slate-100">
                   {cancelledAppts.map((appt) => (
                     <div key={appt.id} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                       <div>
-                        <span className="font-semibold text-slate-400 text-sm line-through">{appt.doctorName}</span>
-                        <p className="text-slate-500 text-xs mt-0.5">{appt.specialization}</p>
+                        <span className="font-semibold text-slate-500 text-sm line-through">{appt.doctorName}</span>
+                        <p className="text-slate-450 text-xs mt-0.5">{appt.specialization}</p>
                       </div>
                       <div className="text-right text-xs font-mono text-slate-500 flex items-center space-x-1.5">
-                        <XCircle className="h-3.5 w-3.5 text-rose-500" />
+                        <XCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
                         <span>Cancelled</span>
                       </div>
                     </div>

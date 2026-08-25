@@ -35,28 +35,28 @@ export default function PatientDoctors() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Find a Medical Practitioner</h1>
-        <p className="text-slate-400 text-sm mt-1">Search active doctors and book clinical sessions.</p>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Find a Medical Practitioner</h1>
+        <p className="text-slate-500 text-xs mt-1">Search active doctors and book clinical sessions.</p>
       </div>
 
       {/* Search Input bar */}
-      <form onSubmit={handleSearch} className="flex gap-3 max-w-lg bg-slate-900 p-2.5 rounded-2xl border border-slate-800 shadow-lg">
+      <form onSubmit={handleSearch} className="flex gap-3 max-w-lg bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm">
         <div className="relative flex-grow rounded-xl">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="h-4.5 w-4.5" />
           </div>
           <input
             type="text"
             value={specialization}
             onChange={(e) => setSpecialization(e.target.value)}
-            className="block w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
+            className="block w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition text-sm"
             placeholder="Search specialization (e.g. Cardiology)..."
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="px-5 py-2 bg-indigo-650 hover:bg-indigo-550 text-white font-semibold rounded-xl text-sm transition cursor-pointer disabled:opacity-50"
+          className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-sm shadow-sm transition cursor-pointer disabled:opacity-50"
         >
           Search
         </button>
@@ -64,16 +64,16 @@ export default function PatientDoctors() {
 
       {/* Main doctor grid list */}
       {loading ? (
-        <div className="flex items-center justify-center p-20">
-          <RefreshCw className="animate-spin h-7 w-7 text-indigo-500 mr-3" />
-          <span className="text-slate-400">Searching active directory...</span>
+        <div className="flex items-center justify-center p-20 bg-white border border-slate-150 rounded-2xl">
+          <RefreshCw className="animate-spin h-6 w-6 text-teal-600 mr-2" />
+          <span className="text-slate-500 text-xs">Searching active directory...</span>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-900/50 text-rose-455 text-sm">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">
           {error}
         </div>
       ) : doctors.length === 0 ? (
-        <div className="p-12 text-center rounded-xl bg-slate-900 border border-slate-800 text-slate-500 text-sm">
+        <div className="p-12 text-center rounded-xl bg-white border border-slate-200 text-slate-550 text-xs font-semibold">
           No doctors found matching the search filter.
         </div>
       ) : (
@@ -81,46 +81,46 @@ export default function PatientDoctors() {
           {doctors.map((doctor) => (
             <div
               key={doctor.id}
-              className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl hover:border-slate-700 transition flex flex-col justify-between"
+              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:border-slate-350 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center space-x-3.5 mb-4">
-                  <div className="p-2.5 bg-gradient-to-tr from-indigo-950/80 to-indigo-900/80 text-indigo-400 rounded-xl border border-indigo-900/20">
+                <div className="flex items-center space-x-3.5 mb-4 pb-3 border-b border-slate-100">
+                  <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100 shrink-0">
                     <Stethoscope className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-base leading-tight">{doctor.name}</h3>
-                    <p className="text-slate-550 text-xs mt-0.5">{doctor.email}</p>
+                  <div className="truncate">
+                    <h3 className="font-bold text-slate-900 text-sm leading-tight truncate">{doctor.name}</h3>
+                    <p className="text-slate-500 text-[10px] mt-0.5 font-mono truncate">{doctor.email}</p>
                   </div>
                 </div>
 
-                <div className="space-y-2 mt-4 text-sm text-slate-350">
+                <div className="space-y-2 mt-4 text-xs text-slate-650">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Specialization:</span>
-                    <span className="font-medium text-indigo-400 bg-indigo-950/30 px-2 py-0.5 rounded text-xs border border-indigo-950/20">
+                    <span className="font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full text-[10px] border border-teal-100">
                       {doctor.specialization}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Experience:</span>
-                    <span className="flex items-center text-xs font-semibold text-slate-300">
-                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500 mr-1" />
+                    <span className="flex items-center text-slate-700 font-semibold">
+                      <Star className="h-3.5 w-3.5 fill-amber-450 text-amber-450 mr-1" />
                       {doctor.experience ? `${doctor.experience} Years` : 'Provisioned'}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Slot Duration:</span>
-                    <span className="font-medium text-xs text-slate-300">{doctor.slotDuration} mins</span>
+                    <span className="font-semibold text-slate-700">{doctor.slotDuration} mins</span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-850">
+              <div className="mt-6 pt-4 border-t border-slate-100">
                 <Link
                   to={`/patient/doctors/${doctor.id}`}
-                  className="w-full inline-flex items-center justify-center space-x-2 py-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                  className="w-full inline-flex items-center justify-center space-x-2 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-teal-700 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
                   <span>Check Availability</span>
                   <ArrowRight className="h-3.5 w-3.5" />
