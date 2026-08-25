@@ -4,6 +4,8 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaClient, Role } from '@prisma/client';
 import { AppError } from '../middleware/error';
 import { authenticate, authorize } from '../middleware/auth';
+import { queueDoctorLeaveEmail, emailQueue } from '../queues/email.queue';
+import { medicationQueue } from '../queues/medication.queue';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -413,9 +415,63 @@ router.post('/doctors/:id/leaves', async (req, res, next) => {
       }
     });
 
+    // Handle affected appointments (cancel them and notify patients)
+    const startOfLeaveDay = new Date(normalizedDate);
+    const endOfLeaveDay = new Date(normalizedDate);
+    endOfLeaveDay.setUTCHours(23, 59, 59, 999);
+
+    const affectedAppointments = await prisma.appointment.findMany({
+      where: {
+        doctorId: doctor.doctorProfile.id,
+        startTime: {
+          gte: startOfLeaveDay,
+          lte: endOfLeaveDay
+        },
+        status: { in: ['CONFIRMED', 'HELD'] }
+      },
+      include: {
+        patient: {
+          include: {
+            user: { select: { name: true, email: true } }
+          }
+        }
+      }
+    });
+
+    for (const appt of affectedAppointments) {
+      // Cancel the appointment
+      await prisma.appointment.update({
+        where: { id: appt.id },
+        data: { status: 'CANCELLED' }
+      });
+
+      const appointmentDateStr = appt.startTime.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC'
+      });
+      const formatTimeStr = (date: Date) => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+      };
+      const appointmentTimeStr = `${formatTimeStr(appt.startTime)} - ${formatTimeStr(appt.endTime)}`;
+
+      // Queue patient notification email asynchronously
+      queueDoctorLeaveEmail({
+        email: appt.patient.user.email,
+        patientName: appt.patient.user.name,
+        doctorName: doctor.name,
+        appointmentDate: `${appointmentDateStr} at ${appointmentTimeStr} (UTC)`,
+        reason: reason || 'unspecified circumstances'
+      }).catch(err => console.error('[Queue Error] Failed to queue doctor leave email:', err));
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Leave day added successfully',
+      message: affectedAppointments.length > 0 
+        ? `Leave day added successfully. Cancelled and notified patients for ${affectedAppointments.length} appointments.`
+        : 'Leave day added successfully',
       leave
     });
   } catch (err) {
@@ -452,6 +508,51 @@ router.delete('/doctors/:id/leaves/:leaveId', async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Leave date deleted successfully'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 12. GET /api/admin/jobs/failed
+router.get('/jobs/failed', async (req, res, next) => {
+  try {
+    let emailFailed: any[] = [];
+    let medFailed: any[] = [];
+    let connectionWarning: string | null = null;
+
+    try {
+      emailFailed = await emailQueue.getFailed(0, 100);
+      medFailed = await medicationQueue.getFailed(0, 100);
+    } catch (redisErr: any) {
+      console.warn('[Admin Jobs API] Redis connection failed, returning empty list:', redisErr.message);
+      connectionWarning = 'Redis server is offline. Failed job logs are temporarily unavailable.';
+    }
+
+    const formattedFailedJobs = [
+      ...emailFailed.map(job => ({
+        jobType: 'Email Notification',
+        jobId: job.id,
+        failedTimestamp: job.finishedOn ? new Date(job.finishedOn).toISOString() : new Date().toISOString(),
+        retryCount: job.attemptsMade,
+        safeErrorMessage: job.failedReason || 'SMTP or Connection error'
+      })),
+      ...medFailed.map(job => ({
+        jobType: 'Medication Reminder',
+        jobId: job.id,
+        failedTimestamp: job.finishedOn ? new Date(job.finishedOn).toISOString() : new Date().toISOString(),
+        retryCount: job.attemptsMade,
+        safeErrorMessage: job.failedReason || 'Notification dispatch error'
+      }))
+    ];
+
+    // Sort by timestamp descending
+    formattedFailedJobs.sort((a, b) => b.failedTimestamp.localeCompare(a.failedTimestamp));
+
+    res.status(200).json({
+      success: true,
+      jobs: formattedFailedJobs,
+      warning: connectionWarning
     });
   } catch (err) {
     next(err);

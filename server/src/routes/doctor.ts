@@ -4,6 +4,7 @@ import { PrismaClient, Role } from '@prisma/client';
 import { AppError } from '../middleware/error';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { LLMService } from '../services/llm.service';
+import { scheduleMedicationReminder } from '../queues/medication.queue';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -25,6 +26,66 @@ const prescriptionSchema = z.object({
   medications: z.array(medicationItemSchema).min(1, 'At least one medication is required')
 });
 
+// Helper: parse medication duration string to number of days
+function parseDurationDays(durationStr: string): number {
+  const num = parseInt(durationStr.replace(/\D/g, ''), 10);
+  if (isNaN(num)) return 1;
+  if (durationStr.toLowerCase().includes('week')) {
+    return num * 7;
+  }
+  if (durationStr.toLowerCase().includes('month')) {
+    return num * 30;
+  }
+  return num;
+}
+
+// Helper: schedule BullMQ delayed reminder jobs for medications
+async function handleMedicationScheduling(
+  medications: any[],
+  patientName: string,
+  patientEmail: string,
+  prescriptionInstructions: string
+) {
+  for (const med of medications) {
+    if (med.frequency === 'AS_NEEDED') {
+      continue;
+    }
+
+    const durationDays = parseDurationDays(med.duration);
+    let hours: number[] = [];
+    if (med.frequency === 'ONCE_DAILY') {
+      hours = [9];
+    } else if (med.frequency === 'TWICE_DAILY') {
+      hours = [9, 21];
+    } else if (med.frequency === 'THREE_TIMES_DAILY') {
+      hours = [9, 15, 21];
+    }
+
+    const today = new Date();
+    for (let d = 1; d <= durationDays; d++) {
+      for (const hr of hours) {
+        const targetDate = new Date(Date.UTC(
+          today.getUTCFullYear(),
+          today.getUTCMonth(),
+          today.getUTCDate() + d,
+          hr,
+          0,
+          0,
+          0
+        ));
+
+        await scheduleMedicationReminder(med.id, targetDate, {
+          patientEmail,
+          patientName,
+          medicineName: med.medicineName,
+          dosage: med.dosage,
+          instruction: prescriptionInstructions || 'Take as prescribed by doctor.'
+        });
+      }
+    }
+  }
+}
+
 // Protect all routes with authentication and DOCTOR role check
 router.use(authenticate);
 router.use(authorize(Role.DOCTOR));
@@ -44,7 +105,7 @@ async function verifyDoctorAppointment(appointmentId: string, doctorUserId: stri
     include: {
       patient: {
         include: {
-          user: { select: { name: true } }
+          user: { select: { name: true, email: true } }
         }
       },
       doctor: true,
@@ -287,6 +348,16 @@ router.post('/doctor/appointments/:appointmentId/complete', async (req: AuthRequ
           status: 'FAILED'
         }
       });
+    }
+
+    // Schedule medication reminders (does not block API response)
+    if (appointment.consultation.prescription && appointment.consultation.prescription.medications.length > 0) {
+      handleMedicationScheduling(
+        appointment.consultation.prescription.medications,
+        appointment.patient.user.name,
+        appointment.patient.user.email,
+        appointment.consultation.prescription.instructions || ''
+      ).catch(err => console.error('[Reminder Scheduling Error] Failed to schedule medication reminders:', err));
     }
 
     res.status(200).json({

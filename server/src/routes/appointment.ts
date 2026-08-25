@@ -5,6 +5,7 @@ import { AppError } from '../middleware/error';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { cleanupExpiredHolds } from '../utils/hold';
 import { LLMService } from '../services/llm.service';
+import { queueConfirmationEmail, queueCancellationEmail, queueRescheduledEmail } from '../queues/email.queue';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -186,7 +187,18 @@ router.post('/appointments/:id/confirm', authorize(Role.PATIENT), async (req: Au
 
     const appointment = await prisma.appointment.findUnique({
       where: { id },
-      include: { patient: true }
+      include: {
+        patient: {
+          include: {
+            user: { select: { name: true, email: true } }
+          }
+        },
+        doctor: {
+          include: {
+            user: { select: { name: true } }
+          }
+        }
+      }
     });
 
     if (!appointment) {
@@ -277,6 +289,28 @@ router.post('/appointments/:id/confirm', authorize(Role.PATIENT), async (req: Au
       };
     }
 
+    // Queue confirmation email asynchronously (does not block confirm completion or fail checkout)
+    const appointmentDateStr = appointment.startTime.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC'
+    });
+    const formatTimeStr = (date: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+    };
+    const appointmentTimeStr = `${formatTimeStr(appointment.startTime)} - ${formatTimeStr(appointment.endTime)}`;
+
+    queueConfirmationEmail({
+      email: appointment.patient.user.email,
+      patientName: appointment.patient.user.name,
+      doctorName: appointment.doctor.user.name,
+      appointmentDate: appointmentDateStr,
+      appointmentTime: appointmentTimeStr,
+      status: 'CONFIRMED'
+    }).catch(err => console.error('[Queue Error] Failed to queue confirmation email:', err));
+
     res.status(200).json({
       success: true,
       message: aiSummaryResponse.status === 'SUCCESS' 
@@ -301,7 +335,18 @@ router.patch('/appointments/:id/cancel', authorize(Role.PATIENT), async (req: Au
 
     const appointment = await prisma.appointment.findUnique({
       where: { id },
-      include: { patient: true }
+      include: {
+        patient: {
+          include: {
+            user: { select: { name: true, email: true } }
+          }
+        },
+        doctor: {
+          include: {
+            user: { select: { name: true } }
+          }
+        }
+      }
     });
 
     if (!appointment) {
@@ -323,6 +368,28 @@ router.patch('/appointments/:id/cancel', authorize(Role.PATIENT), async (req: Au
         status: 'CANCELLED'
       }
     });
+
+    // Queue cancellation email asynchronously
+    const appointmentDateStr = appointment.startTime.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC'
+    });
+    const formatTimeStr = (date: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+    };
+    const appointmentTimeStr = `${formatTimeStr(appointment.startTime)} - ${formatTimeStr(appointment.endTime)}`;
+
+    queueCancellationEmail({
+      email: appointment.patient.user.email,
+      patientName: appointment.patient.user.name,
+      doctorName: appointment.doctor.user.name,
+      appointmentDate: appointmentDateStr,
+      appointmentTime: appointmentTimeStr,
+      status: 'CANCELLED'
+    }).catch(err => console.error('[Queue Error] Failed to queue cancellation email:', err));
 
     res.status(200).json({
       success: true,
@@ -352,7 +419,18 @@ router.patch('/appointments/:id/reschedule', authorize(Role.PATIENT), async (req
 
     const appointment = await prisma.appointment.findUnique({
       where: { id },
-      include: { patient: true, doctor: true } // doctor is already DoctorProfile
+      include: {
+        patient: {
+          include: {
+            user: { select: { name: true, email: true } }
+          }
+        },
+        doctor: {
+          include: {
+            user: { select: { name: true } }
+          }
+        }
+      }
     });
 
     if (!appointment || !appointment.doctor) {
@@ -431,6 +509,23 @@ router.patch('/appointments/:id/reschedule', authorize(Role.PATIENT), async (req
           status: 'CONFIRMED' // Auto-confirms on reschedule
         }
       });
+
+      // Queue rescheduled email asynchronously
+      const formatTimeStr = (date: Date) => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+      };
+      const oldScheduleStr = `${appointment.startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} at ${formatTimeStr(appointment.startTime)} (UTC)`;
+      const newScheduleStr = `${newStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} at ${formatTimeStr(newStart)} (UTC)`;
+
+      queueRescheduledEmail({
+        email: appointment.patient.user.email,
+        patientName: appointment.patient.user.name,
+        doctorName: appointment.doctor.user.name,
+        oldDate: oldScheduleStr,
+        newDate: newScheduleStr,
+        status: 'CONFIRMED'
+      }).catch(err => console.error('[Queue Error] Failed to queue reschedule email:', err));
 
       res.status(200).json({
         success: true,
